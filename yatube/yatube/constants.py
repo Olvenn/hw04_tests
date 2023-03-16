@@ -1,0 +1,1 @@
+POSTS_PER_STR: int = 10
