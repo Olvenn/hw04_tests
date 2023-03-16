@@ -51,7 +51,7 @@ class PostMainViewTests(TestCase):
         self.form_fields = {
             'text': forms.fields.CharField,
             'group': forms.fields.ChoiceField,
-            }
+        }
 
     def test_page_has_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
@@ -119,7 +119,7 @@ class PostMainViewTests(TestCase):
         for value, expected in self.form_fields.items():
             with self.subTest(value=value):
                 form_field = response.context['form'].fields[value]
-                self.assertIsInstance(form_field, expected)   
+                self.assertIsInstance(form_field, expected)
 
 
 class PostViewTests(TestCase):
@@ -181,7 +181,7 @@ class PostViewTests(TestCase):
         response = self.authorized_client.get(
             reverse('posts:group', args=['group-slug']))
         num = random.randint(1, POSTS_PER_STR - 1)
-        first_object = response.context['page_obj'][num] 
+        first_object = response.context['page_obj'][num]
         post_group_0 = first_object.group.title
         self.assertEqual(post_group_0, 'Тестовая группа 1')
 
