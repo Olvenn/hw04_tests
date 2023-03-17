@@ -1,15 +1,10 @@
-from django.contrib.auth import get_user_model
 from django.test import TestCase, Client
 from django.urls import reverse
 from django import forms
 import random
 
-
-from ..models import Group, Post
+from ..models import Group, Post, User
 from yatube.constants import POSTS_PER_STR
-
-
-User = get_user_model()
 
 
 class PostMainViewTests(TestCase):
