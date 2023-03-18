@@ -1,6 +1,9 @@
 from django.test import TestCase, Client
 from django.urls import reverse
 from django import forms
+
+from http import HTTPStatus
+
 import random
 
 from ..models import Group, Post, User
@@ -153,12 +156,13 @@ class PostViewTests(TestCase):
             email='mark@yatube.ru'
         )
 
-        for i in range(1, PAGES_COUNT_1):
-            cls.post = Post.objects.create(
-                group=PostMainViewTests.group,
-                text=f'Тест  1-{i + 1}',
-                author=cls.author,
-            )
+        cls.post = Post.objects.bulk_create([
+            Post(group=PostMainViewTests.group,
+                 text=f'Тест  1-{i + 1}',
+                 author=cls.author,)
+            for i in range(1, PAGES_COUNT_1)
+        ])
+
         cls.post = Post.objects.create(
             group=PostMainViewTests.group,
             text="Пост для проверки",
@@ -192,38 +196,39 @@ class PostViewTests(TestCase):
     def test_post_on_main_page(self):
         """проверка отображения на главной странице"""
         response = self.authorized_client.get(reverse('posts:index'))
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertContains(response, "Пост для проверки")
 
     def test_post_on_group_page(self):
         """Проверка отображения на странице группы"""
         response = self.authorized_client.get(reverse('posts:group',
                                                       args=[self.group.slug]))
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertContains(response, "Пост для проверки")
 
     def test_post_on_group_page(self):
         """проверка отображения на странице группы"""
         response = self.authorized_client.get(reverse('posts:group',
                                                       args=[self.group.slug]))
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertContains(response, "Пост для проверки")
 
     def test_post_on_group_page(self):
         """Проверка отображения на странице группы"""
         response = self.authorized_client.get(reverse('posts:group',
                                                       args=[self.group.slug]))
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertContains(response, "Пост для проверки")
 
     def test_post_on_group_page(self):
         """Проверка отображения на странице автора"""
         response = (self.authorized_client.
                     get(reverse('posts:profile', args=[self.author.username])))
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertContains(response, "Пост для проверки")
 
     def test_post_delete(self):
+        """Проверка удаления поста"""
         Post.objects.filter(text="Тест 1-14").delete()
         response = (self.authorized_client.
                     get(reverse('posts:profile', args=[self.author.username])))

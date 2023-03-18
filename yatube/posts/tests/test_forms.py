@@ -9,6 +9,9 @@ class PostFormTests(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.author = User.objects.create(username='NewTestUser')
+        cls.authorized_client = Client()
+        cls.authorized_client.force_login(cls.author)
+
         cls.group = Group.objects.create(
             title='Тестовая группа',
             slug='test-slug',
@@ -19,10 +22,6 @@ class PostFormTests(TestCase):
             text='Тестовый пост',
             group=cls.group
         )
-
-    def setUp(self):
-        self.authorized_client = Client()
-        self.authorized_client.force_login(self.author)
 
     def test_post_form_create_new_post(self):
         posts_count = Post.objects.count()
@@ -43,6 +42,10 @@ class PostFormTests(TestCase):
             text='Тестовый текст из формы',
             group=self.group.id
         ).exists())
+        post_request = self.authorized_client.get(reverse('posts:index'))
+        first_object = post_request.context['page_obj'][0]
+        self.assertEqual(first_object.text, 'Тестовый текст из формы')
+        self.assertEqual(first_object.group.title, 'Тестовая группа')
 
     def test_post_edit_correct(self):
         posts_count = Post.objects.count()

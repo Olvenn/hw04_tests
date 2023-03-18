@@ -1,5 +1,7 @@
 from django.test import TestCase, Client
 
+from http import HTTPStatus
+
 from ..models import Group, Post, User
 
 
@@ -18,6 +20,8 @@ class PostURLTests(TestCase):
         super().setUpClass()
         cls.guest_client = Client()
         cls.user = User.objects.create_user(username='TestUser')
+        cls.authorized_client = Client()
+        cls.authorized_client.force_login(cls.user)
         cls.group = Group.objects.create(
             title='Тестовая группа',
             description='Тестовое описание',
@@ -27,11 +31,6 @@ class PostURLTests(TestCase):
             author=cls.user,
             text='Тестовый пост',
         )
-
-    def setUp(self):
-        self.guest_client = Client()
-        self.authorized_client = Client()
-        self.authorized_client.force_login(self.user)
 
     def test_str_exists_at_desired_location(self):
         """Страница / доступна любому пользователю."""
@@ -46,12 +45,14 @@ class PostURLTests(TestCase):
         for path, expected_value in test_items.items():
             with self.subTest(path=path):
                 self.assertEqual(
-                    self.guest_client.get(expected_value).status_code, 200)
+                    # self.assertEqual(response.status_code, HTTPStatus.OK)
+                    self.guest_client.get(expected_value).status_code,
+                    HTTPStatus.OK)
 
     def test_posts_unexisting_page_exists_at_desired_location(self):
         """Страница / доступна любому пользователю."""
         response = self.guest_client.get('/unexisting_page/')
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
 
     def test_str_exists_at_desired_location_authorized(self):
         """Страница / доступна авторизованному пользователю."""
@@ -65,7 +66,7 @@ class PostURLTests(TestCase):
             with self.subTest(path=path):
                 self.assertEqual(
                     self.authorized_client.get(expected_value)
-                    .status_code, 200)
+                    .status_code, HTTPStatus.OK)
 
     def test_create_url_redirect_anonymous_on_auth_login(self):
         """Страница по адресу /create/ перенаправит анонимного
