@@ -1,6 +1,6 @@
-from django.test import TestCase, Client
-
 from http import HTTPStatus
+
+from django.test import Client, TestCase
 
 from ..models import Group, Post, User
 
@@ -11,7 +11,7 @@ class StaticURLTests(TestCase):
 
     def test_homepage(self):
         response = self.guest_client.get('/')
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
 
 
 class PostURLTests(TestCase):
@@ -45,7 +45,6 @@ class PostURLTests(TestCase):
         for path, expected_value in test_items.items():
             with self.subTest(path=path):
                 self.assertEqual(
-                    # self.assertEqual(response.status_code, HTTPStatus.OK)
                     self.guest_client.get(expected_value).status_code,
                     HTTPStatus.OK)
 

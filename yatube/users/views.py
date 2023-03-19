@@ -1,6 +1,5 @@
-from django.views.generic import CreateView
-
 from django.urls import reverse_lazy
+from django.views.generic import CreateView
 
 # Импортируем класс формы, чтобы сослаться на неё во view-классе
 from .forms import CreationForm

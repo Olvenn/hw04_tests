@@ -1,13 +1,13 @@
-from django.test import TestCase, Client
-from django.urls import reverse
-from django import forms
-
+import random
 from http import HTTPStatus
 
-import random
+from django import forms
+from django.test import Client, TestCase
+from django.urls import reverse
+
+from yatube.constants import POSTS_PER_STR
 
 from ..models import Group, Post, User
-from yatube.constants import POSTS_PER_STR
 
 
 class PostMainViewTests(TestCase):

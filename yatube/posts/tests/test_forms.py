@@ -17,14 +17,8 @@ class PostFormTests(TestCase):
             slug='test-slug',
             description='Тестовое описание'
         )
-        cls.post = Post.objects.create(
-            author=cls.author,
-            text='Тестовый пост',
-            group=cls.group
-        )
 
     def test_post_form_create_new_post(self):
-        posts_count = Post.objects.count()
         form_data = {
             'group': self.group.id,
             'text': 'Тестовый текст из формы',
@@ -36,8 +30,8 @@ class PostFormTests(TestCase):
         )
         self.assertRedirects(response,
                              reverse('posts:profile',
-                                     kwargs={'username': self.post.author}))
-        self.assertEqual(Post.objects.count(), posts_count + 1)
+                                     kwargs={'username': self.author}))
+        self.assertEqual(Post.objects.count(), 1)
         self.assertTrue(Post.objects.filter(
             text='Тестовый текст из формы',
             group=self.group.id
@@ -48,6 +42,11 @@ class PostFormTests(TestCase):
         self.assertEqual(first_object.group.title, 'Тестовая группа')
 
     def test_post_edit_correct(self):
+        self.post = Post.objects.create(
+            author=self.author,
+            text='Тестовый пост',
+            group=self.group
+        )
         posts_count = Post.objects.count()
         form_data = {
             'text': 'Измененный текст из формы',
