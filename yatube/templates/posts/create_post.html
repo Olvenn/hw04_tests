@@ -8,6 +8,8 @@
 {% endblock %}
 {% block content %}
 {% load user_filters %}
+{% load thumbnail %}
+
 
   <div class="container py-5">
     <div class="row justify-content-center">
@@ -30,8 +32,8 @@
                 </div>
               {% endfor %}
             {% endif %}
- 0         <div class="card-body">
-            <form method="post" action="{% if form.instance.id %}
+            <div class="card-body">
+            <form method="post" enctype="multipart/form-data" action="{% if form.instance.id %}
               {% url 'posts:post_edit' post.pk %}
               {% else %}
               {% url 'posts:post_create' %} 
