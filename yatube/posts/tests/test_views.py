@@ -11,7 +11,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 
 from yatube.constants import POSTS_PER_STR
 
-from ..models import Group, Post, User
+from ..models import Group, Post, User, Comment
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
@@ -157,6 +157,68 @@ class PostMainViewTests(TestCase):
             with self.subTest(value=value):
                 form_field = response.context['form'].fields[value]
                 self.assertIsInstance(form_field, expected)
+
+    def test_add_comment_correct(self):
+        """Комментировать посты может только авторизованный пользователь."""
+        form_data = {'text': 'test_add_comment_correct', }
+        add_comment_url = reverse(
+            'posts:add_comment', kwargs={
+                'post_id': PostMainViewTests.post.id
+            }
+        )
+        response = self.client.post(
+            add_comment_url,
+            data=form_data,
+            follow=True
+        )
+        # проверяем корректность редиректа
+        self.assertRedirects(
+            response, f'{reverse("users:login")}?next={add_comment_url}'
+        )
+        # создаем комментарий
+        form_data = {'text': 'test_add_comment_correct', }
+        response = self.authorized_client.post(
+            add_comment_url,
+            data=form_data,
+            follow=True,
+        )
+        # проверяем корректность редиректа
+        self.assertRedirects(
+            response,
+            reverse(
+                'posts:post_detail', kwargs={
+                    'post_id': PostMainViewTests.post.id
+                }
+            )
+        )
+        # проверяем, что первый комментарий на странице только что добавленный
+        self.assertIn('comments', response.context)
+        self.assertGreaterEqual(len(response.context['comments']), 1)
+        self.assertEqual(
+            response.context['comments'][0].text, form_data['text']
+        )
+
+    # def test_add_comment_login_user(self):
+    #     """
+    #     Проверка доступа зарегистрированного пользователя
+    #     к добавлению комментария
+    #     """
+    #     first_id = Post.objects.filter(author=self.author).first()
+    #     form_data = {
+    #         'text': 'Моя позиция полностью совпадает с мнением автора.',
+    #     }
+    #     self.authorized_client.post(reverse('posts:add_comment',
+    #                                         args=[self.author.username,
+    #                                               first_id.id]),
+    #                                 data=form_data, follow=True)
+    #             # response = self.author_client.get(reverse('posts:post_edit',
+    #             #                           args=[PostMainViewTests.post.id]))
+    #     last_comment = (
+    #         Comment.objects.filter(author__username=self.author.username).last()
+    #     )
+    #     self.assertEqual(form_data['text'], last_comment.text)
+    #     self.assertEqual(first_id.id, last_comment.post.id)
+    #     self.assertEqual(str(last_comment.author), self.author.username)
 
 
 class PostViewTests(TestCase):
