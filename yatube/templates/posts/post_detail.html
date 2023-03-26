@@ -4,6 +4,7 @@
 {% endblock %}
 {% block content %}
 {% load thumbnail %}
+{% load static %}
 
   <div class="row">
     <aside class="col-12 col-md-3">
@@ -39,6 +40,12 @@
     <p>
       {{ post.text|linebreaksbr }}
     </p>
+    {% if request.user == post.author %}
+      <a class="btn btn-primary" href="{% url 'posts:post_edit' post.id %}">
+        редактировать запись
+      </a>
+    {% endif %}
+    {% include 'posts/includes/comments.html' %} 
     </article>
   </div> 
 

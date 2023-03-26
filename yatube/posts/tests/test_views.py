@@ -26,6 +26,10 @@ class PostMainViewTests(TestCase):
         cls.user = User.objects.create_user(username='TestUser')
         cls.authorized_client = Client()
         cls.authorized_client.force_login(cls.user)
+        cls.form_fields = {
+            'text': forms.fields.CharField,
+            'group': forms.fields.ChoiceField,
+        }
 
         cls.group = Group.objects.create(
             title='Тестовая группа',
@@ -39,6 +43,9 @@ class PostMainViewTests(TestCase):
             username='FirstAuthor',
             email='lev@yatube.ru'
         )
+
+        cls.author_client = Client()
+        cls.author_client.force_login(PostMainViewTests.author)
 
         small_gif = (
             b'\x47\x49\x46\x38\x39\x61\x02\x00'
@@ -62,17 +69,17 @@ class PostMainViewTests(TestCase):
             image=uploaded,
         )
 
-    def setUp(self):
-        self.guest_client = Client()
-        self.user = User.objects.create_user(username='HasNoName')
-        self.authorized_client = Client()
-        self.authorized_client.force_login(self.user)
-        self.author_client = Client()
-        self.author_client.force_login(PostMainViewTests.author)
-        self.form_fields = {
-            'text': forms.fields.CharField,
-            'group': forms.fields.ChoiceField,
-        }
+    # def setUp(self):
+    #     self.guest_client = Client()
+    #     self.user = User.objects.create_user(username='HasNoName')
+    #     self.authorized_client = Client()
+    #     self.authorized_client.force_login(self.user)
+    #     self.author_client = Client()
+    #     self.author_client.force_login(PostMainViewTests.author)
+    #     self.form_fields = {
+    #         'text': forms.fields.CharField,
+    #         'group': forms.fields.ChoiceField,
+    #     }
 
     def test_page_has_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
@@ -105,19 +112,16 @@ class PostMainViewTests(TestCase):
         self.assertEqual(post_text_0, 'Тестовый пост')
         self.assertEqual(post_group_0, 'Тестовая группа')
         self.assertEqual(post_author_0, 'FirstAuthor')
-        # self.assertEqual(post_image_0, 'small.gif')
+        self.assertEqual(post_image_0, 'posts/small.gif')
 
-    def test_home_page_show_correct_context(self):
-        """Пост отображается на главной странице"""
-        response = self.authorized_client.get(reverse('posts:index'))
+    def test_group_page_show_correct_context(self):
+        """Проверка отображения на странице группы"""
+        response = self.authorized_client.get(reverse('posts:group',
+                                                      args=[self.group.slug]))
         first_object = response.context['page_obj'][0]
-
-        post_text_0 = first_object.text
-        post_group_0 = first_object.group.title
-        post_author_0 = first_object.author.username
-        self.assertEqual(post_text_0, 'Тестовый пост')
-        self.assertEqual(post_group_0, 'Тестовая группа')
-        self.assertEqual(post_author_0, 'FirstAuthor')
+        post_image_0 = first_object.image
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(post_image_0, 'posts/small.gif')
 
     def test_post_detail_pages_show_correct_context(self):
         """Шаблон post_detail сформирован с правильным контекстом."""
@@ -126,6 +130,16 @@ class PostMainViewTests(TestCase):
         self.assertEqual(response.context.get('post').group.title,
                          'Тестовая группа')
         self.assertEqual(response.context.get('post').text, 'Тестовый пост')
+        self.assertEqual(response.context.get('post').image, 'posts/small.gif')
+
+    # def test_context_in_profile(self):
+    #     """Проверка содержимого словаря context для /<username>/"""
+    #     url = reverse('posts:profile', kwargs={'username':
+    #                   f'{self.user.username}'})
+    #     print(url)
+        # response = self.authorized_client.get(url)
+        # post = response.context['page'][0]
+        # self.check_post_context(post)
 
     def test_create_post__page_show_correct_context(self):
         """Шаблон create_post сформирован с правильным контекстом."""
@@ -253,23 +267,23 @@ class PostViewTests(TestCase):
         self.assertNotContains(response, "Тест 1-14")
 
 
-# class paginatorViewsTest(TestCase):
-#     @classmethod
-#     def setUpClass(cls):
-#         super().setUpClass()
-#         cls.user = User.objects.create_user(username='Test User')
-#         cls.authorized_client = Client()
-#         cls.authorized_client.force_login(cls.user)
-#         for count in range(15):
-#             cls.post = Post.objects.create(
-#                 text=f'Тестовый пост номер {count}',
-#                 author=cls.user)
+class paginatorViewsTest(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.user = User.objects.create_user(username='Test User')
+        cls.authorized_client = Client()
+        cls.authorized_client.force_login(cls.user)
+        for count in range(15):
+            cls.post = Post.objects.create(
+                text=f'Тестовый пост номер {count}',
+                author=cls.user)
 
-#     def test_first_page_contains_ten_records(self):
-#         response = self.authorized_client.get(reverse('posts:index'))
-#         self.assertEqual(len(response.context.get('page_obj').object_list), 10)
+    def test_first_page_contains_ten_records(self):
+        response = self.authorized_client.get(reverse('posts:index'))
+        self.assertEqual(len(response.context.get('page_obj').object_list), 10)
 
-#     def test_second_page_contains_three_records(self):
-#         response = self.authorized_client.get(
-#             reverse('posts:index') + '?page=2')
-#         self.assertEqual(len(response.context.get('page_obj').object_list), 5)
+    def test_second_page_contains_three_records(self):
+        response = self.authorized_client.get(
+            reverse('posts:index') + '?page=2')
+        self.assertEqual(len(response.context.get('page_obj').object_list), 5)
