@@ -99,3 +99,6 @@ class Follow(models.Model):
             models.UniqueConstraint(fields=['user', 'author'],
                                     name='unique_author_user_following')
         ]
+
+    def __str__(self):
+        return f'{self.user} подписан на {self.author}'

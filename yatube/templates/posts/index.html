@@ -5,6 +5,7 @@
       <h2>{{title}}</h2>
       {% load cache %}
       {% cache 20 index_page page_obj.number %}
+      {% include 'posts/includes/switcher.html' %}
         {% for post in page_obj %}
           {% include 'posts/includes/post_item.html' %} 
           <p>{{ post.group.slug }}</p>

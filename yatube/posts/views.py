@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from yatube.constants import POSTS_PER_STR
 
 from .forms import PostForm, CommentForm
-from .models import Group, Post, User
+from .models import Group, Post, User, Follow
 from .utils import create_page_object
 
 
@@ -35,12 +35,16 @@ def profile(request, username):
     posts = user.posts.select_related('author')
     posts_count = Post.objects.filter(author__exact=user).count
     page_obj = create_page_object(request, posts, POSTS_PER_STR)
+    following = None
+    if request.user.is_authenticated:
+        following = user.following.filter(user=request.user).exists()
 
     context = {
         "username": username,
         "author": user,
         "posts_count": posts_count,
         "page_obj": page_obj,
+        'following': following
     }
     return render(request, 'posts/profile.html', context)
 
@@ -107,3 +111,40 @@ def add_comment(request, post_id):
         comment.post = post
         comment.save()
     return redirect('posts:post_detail', post_id=post_id)
+
+
+@login_required
+def follow_index(request):
+    # информация о текущем пользователе доступна в переменной request.user
+    posts = Post.objects.filter(
+        author__followint__username=request.user
+    )
+    page_obj = create_page_object(request, posts, POSTS_PER_STR)
+    context = {
+        'page_obj': page_obj
+    }
+    return render(request, 'posts/follow.html', context)
+
+
+@login_required
+def profile_follow(request, username):
+    # Подписаться на автора
+    author = get_object_or_404(User, username=username)
+    follow = Follow.objects.filter(
+        user=request.user,
+        author=author)
+    if request.user != author and not follow.exists():
+        Follow.objects.create(user=request.user,
+                              author=author)
+    return redirect('posts:profile', author)
+
+
+@login_required
+def profile_unfollow(request, username):
+    # Дизлайк, отписка
+    author = User.objects.get(username=username)
+    Follow.objects.filter(
+        user=request.user,
+        author=author,
+    ).delete()
+    return redirect('posts:profile', username=username)
