@@ -70,50 +70,50 @@ class PostMainViewTests(TestCase):
             image=uploaded,
         )
 
-    # def setUp(self):
-    #     self.guest_client = Client()
-    #     self.user = User.objects.create_user(username='HasNoName')
-    #     self.authorized_client = Client()
-    #     self.authorized_client.force_login(self.user)
-    #     self.author_client = Client()
-    #     self.author_client.force_login(PostMainViewTests.author)
-    #     self.form_fields = {
-    #         'text': forms.fields.CharField,
-    #         'group': forms.fields.ChoiceField,
-    #     }
+    def setUp(self):
+        self.guest_client = Client()
+        self.user = User.objects.create_user(username='HasNoName')
+        self.authorized_client = Client()
+        self.authorized_client.force_login(self.user)
+        self.author_client = Client()
+        self.author_client.force_login(PostMainViewTests.author)
+        self.form_fields = {
+            'text': forms.fields.CharField,
+            'group': forms.fields.ChoiceField,
+        }
 
-    # def test_page_has_correct_template(self):
-    #     """URL-адрес использует соответствующий шаблон."""
-    #     templates_pages_names = {
-    #         reverse('posts:index'): 'posts/index.html',
-    #         reverse('posts:group', kwargs={'slug': f'{self.group.slug}'}):
-    #             'posts/group_list.html',
-    #         reverse('posts:profile', kwargs={'username':
-    #                 f'{self.user.username}'}): 'posts/profile.html',
-    #         reverse('posts:post_detail', kwargs={'post_id':
-    #                 f'{self.post.id}'}): 'posts/post_detail.html',
-    #         reverse('posts:post_create'): 'posts/create_post.html',
-    #         reverse('posts:post_detail', kwargs={'post_id':
-    #                 f'{self.post.id}'}): 'posts/post_detail.html',
-    #     }
-    #     for template, reverse_name in templates_pages_names.items():
-    #         with self.subTest(reverse_name=reverse_name):
-    #             response = self.authorized_client.get(template)
-    #             self.assertTemplateUsed(response, reverse_name)
+    def test_page_has_correct_template(self):
+        """URL-адрес использует соответствующий шаблон."""
+        templates_pages_names = {
+            reverse('posts:index'): 'posts/index.html',
+            reverse('posts:group', kwargs={'slug': f'{self.group.slug}'}):
+                'posts/group_list.html',
+            reverse('posts:profile', kwargs={'username':
+                    f'{self.user.username}'}): 'posts/profile.html',
+            reverse('posts:post_detail', kwargs={'post_id':
+                    f'{self.post.id}'}): 'posts/post_detail.html',
+            reverse('posts:post_create'): 'posts/create_post.html',
+            reverse('posts:post_detail', kwargs={'post_id':
+                    f'{self.post.id}'}): 'posts/post_detail.html',
+        }
+        for template, reverse_name in templates_pages_names.items():
+            with self.subTest(reverse_name=reverse_name):
+                response = self.authorized_client.get(template)
+                self.assertTemplateUsed(response, reverse_name)
 
-    # def test_home_page_show_correct_context(self):
-    #     """Пост отображается на главной странице"""
-    #     response = self.authorized_client.get(reverse('posts:index'))
-    #     first_object = response.context['page_obj'][0]
+    def test_home_page_show_correct_context(self):
+        """Пост отображается на главной странице"""
+        response = self.authorized_client.get(reverse('posts:index'))
+        first_object = response.context['page_obj'][0]
 
-    #     post_text_0 = first_object.text
-    #     post_group_0 = first_object.group.title
-    #     post_author_0 = first_object.author.username
-    #     post_image_0 = first_object.image
-    #     self.assertEqual(post_text_0, 'Тестовый пост')
-    #     self.assertEqual(post_group_0, 'Тестовая группа')
-    #     self.assertEqual(post_author_0, 'FirstAuthor')
-    #     self.assertEqual(post_image_0, 'posts/small.gif')
+        post_text_0 = first_object.text
+        post_group_0 = first_object.group.title
+        post_author_0 = first_object.author.username
+        post_image_0 = first_object.image
+        self.assertEqual(post_text_0, 'Тестовый пост')
+        self.assertEqual(post_group_0, 'Тестовая группа')
+        self.assertEqual(post_author_0, 'FirstAuthor')
+        self.assertEqual(post_image_0, 'posts/small.gif')
 
     def test_group_page_show_correct_context(self):
         """Проверка отображения на странице группы"""
@@ -362,12 +362,13 @@ class FollowTest(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.author = User.objects.create_user(username='followingUser')
+        cls.author_user = Client()
+        cls.author_user.force_login(cls.author)
         cls.follower = User.objects.create_user(username='followerUser')
         cls.follower_user = Client()
         cls.follower_user.force_login(cls.follower)
         cls.unfollower = User.objects.create_user(username='User')
         cls.unfollower_user = Client()
-        cls.unfollower_user.force_login(cls.unfollower)
 
         cls.post = Post.objects.create(
             author=cls.author,
@@ -375,13 +376,22 @@ class FollowTest(TestCase):
         )
 
     def test_user_can_following(self):
-        """Авторизованный пользователь может 
+        """Авторизованный пользователь может
         подписаться на другого пользователя"""
         count = Follow.objects.count()
         self.follower_user.get(reverse(
             'posts:profile_follow',
             kwargs={'username': self.author.username}))
         self.assertEqual(Follow.objects.count(), count + 1)
+
+    # def test_user_can_unfollowing(self):
+    #     """Не авторизованный пользователь не может
+    #     подписаться на другого пользователя"""
+    #     count = Follow.objects.count()
+    #     self.unfollower_user.get(reverse(
+    #         'posts:profile_follow',
+    #         kwargs={'username': self.author.username}))
+    #     self.assertEqual(Follow.objects.count(), count + 1)
 
     def test_user_can_unfollowing(self):
         """Пользователь может подписаться на автора"""
@@ -393,3 +403,17 @@ class FollowTest(TestCase):
             'posts:profile_unfollow',
             kwargs={'username': self.author.username}))
         self.assertEqual(Follow.objects.count(), count - 1)
+
+    # def test_follow_index(self):
+    #     """
+    #     Новая запись пользователя появляется в ленте тех,
+    #     кто на него подписан и не появляется в ленте тех,
+    #     кто не подписан на него
+    #     """
+    #     response = self.follower_user.get(reverse('posts:follow_index'))
+    #     print(response)
+    #     self.follower_user.get(
+    #         reverse('profile_follow', args=[self.author]))
+    #     response_follow = self.follower_user.get(
+    #         reverse('follow_index'))
+    #     self.assertEqual(response.content, response_follow.content)
