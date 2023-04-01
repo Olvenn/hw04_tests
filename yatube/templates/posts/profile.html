@@ -4,12 +4,11 @@
 {% load thumbnail %}
 
 <div class="container py-5">        
-  {% comment %} <h1>Все посты пользователя {{ author.get_full_name }} </h1>
-  <h3>Всего постов: {{posts_count}} </h3> {% endcomment %}
+  <h1>Все посты пользователя {{ author.get_full_name }} </h1>
+  <h3>Всего постов: {{posts_count}} </h3>
   <div class="mb-5">
-  <h1>Все посты пользователя {{ author.get_full_name }}</h1>
-  <h3>Всего постов: {{ posts_count }}</h3>
-  {% if following %}
+  {% include 'posts/includes/switcher.html' %}
+  {% comment %} {% if following %}
     <a
       class="btn btn-lg btn-light"
       href="{% url 'posts:profile_unfollow' author.username %}" role="button"
@@ -23,7 +22,7 @@
       >
         Подписаться
       </a>
-   {% endif %}
+   {% endif %} {% endcomment %}
   </div>
   {% for post in page_obj %}
     <article>

@@ -35,9 +35,9 @@ def profile(request, username):
     posts = user.posts.select_related('author')
     posts_count = Post.objects.filter(author__exact=user).count
     page_obj = create_page_object(request, posts, POSTS_PER_STR)
-    following = None
-    if request.user.is_authenticated:
-        following = user.following.filter(user=request.user).exists()
+    following = True
+    # if request.user.is_authenticated  and user != request.user:
+    #     following = Follow.objects.filter(user=request.user).exists()
 
     context = {
         "username": username,
@@ -116,9 +116,7 @@ def add_comment(request, post_id):
 @login_required
 def follow_index(request):
     # информация о текущем пользователе доступна в переменной request.user
-    posts = Post.objects.filter(
-        author__followint__username=request.user
-    )
+    posts = Post.objects.filter(author__following__user=request.user)
     page_obj = create_page_object(request, posts, POSTS_PER_STR)
     context = {
         'page_obj': page_obj
@@ -136,7 +134,7 @@ def profile_follow(request, username):
     if request.user != author and not follow.exists():
         Follow.objects.create(user=request.user,
                               author=author)
-    return redirect('posts:profile', author)
+    return redirect('posts:profile', username=username)
 
 
 @login_required

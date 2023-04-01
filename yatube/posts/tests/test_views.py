@@ -122,7 +122,23 @@ class PostMainViewTests(TestCase):
         first_object = response.context['page_obj'][0]
         post_image_0 = first_object.image
         self.assertEqual(response.status_code, HTTPStatus.OK)
+        post_text_0 = first_object.text
+        post_group_0 = first_object.group.title
+        post_author_0 = first_object.author.username
         self.assertEqual(post_image_0, 'posts/small.gif')
+    
+    def test_post_on_author_page(self):
+        """Проверка отображения нового поста на странице автора"""
+        response = (self.authorized_client.
+                    get(reverse('posts:profile', args=[self.author.username])))
+        first_object = response.context['page_obj'][0]
+        post_image_0 = first_object.image
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        post_text_0 = first_object.text
+        post_group_0 = first_object.group.title
+        post_author_0 = first_object.author.username
+        self.assertEqual(post_image_0, 'posts/small.gif')
+    
 
     def test_post_detail_pages_show_correct_context(self):
         """Шаблон post_detail сформирован с правильным контекстом."""
@@ -133,14 +149,14 @@ class PostMainViewTests(TestCase):
         self.assertEqual(response.context.get('post').text, 'Тестовый пост')
         self.assertEqual(response.context.get('post').image, 'posts/small.gif')
 
-    # def test_context_in_profile(self):
-    #     """Проверка содержимого словаря context для /<username>/"""
-    #     url = reverse('posts:profile', kwargs={'username':
-    #                   f'{self.user.username}'})
-    #     print(url)
-        # response = self.authorized_client.get(url)
-        # post = response.context['page'][0]
-        # self.check_post_context(post)
+    def test_context_in_profile(self):
+        """Шаблон post_profile сформирован с правильным контекстом."""
+        response = (self.authorized_client.
+            get(reverse('posts:profile', args=[self.author.username])))
+        self.assertEqual(response.context.get('post').group.title,
+                         'Тестовая группа')
+        self.assertEqual(response.context.get('post').text, 'Тестовый пост')
+        self.assertEqual(response.context.get('post').image, 'posts/small.gif')
 
     def test_create_post__page_show_correct_context(self):
         """Шаблон create_post сформирован с правильным контекстом."""
@@ -199,31 +215,49 @@ class PostMainViewTests(TestCase):
             response.context['comments'][0].text, form_data['text']
         )
 
-    # def test_cach_in_index_page(self):
-    #     """Проверяем работу кеша на главной странице"""
-    #     cache_post = Post.objects.create(
-    #         group=PostMainViewTests.group,
-    #         text='Тестовый пост для проверки кэша.',
-    #         author=self.author,
-    #     )
 
-    #     # проверим, что пост есть
-    #     response = self.client.get(reverse('posts:index'))
-    #     self.assertIn('page_obj', response.context)
-    #     self.assertGreater(len(response.context['page_obj']), 0)
-    #     self.assertEqual(
-    #         response.context['page_obj'][0].text,
-    #         cache_post.text
-    #     )
-    #     cache.clear()
-    #     # проверим, что поста больше нет
-    #     response = self.client.get(reverse('posts:index'))
-    #     self.assertIn('page_obj', response.context)
-    #     self.assertGreater(len(response.context['page_obj']), 0)
-    #     self.assertNotEqual(
-    #         response.context['page_obj'][0].text,
-    #         cache_post.text
-    #     )
+class CacheIndexPageTest(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cache.clear()
+        cls.author = User.objects.create(
+            username='Author',
+        )
+        
+        cls.group = Group.objects.create(
+            title='Тестовая группа',
+            description='Тестовое описание',
+            slug='group-slug',
+        )
+
+        cls.post = Post.objects.create(
+            group=cls.group,
+            text='Тестовый пост для проверки кэширования.',
+            author=cls.author,
+        )
+    
+    def setUp(self):
+        self.authorized_client = Client()
+        self.authorized_client.force_login(self.author)
+
+    def test_cach_in_index_page(self):
+        """Проверяем работу кеша на главной странице"""
+
+        # проверим, что пост есть
+        response_1 = self.authorized_client.get(reverse('posts:index'))
+        Post.objects.all().delete()
+        response_2 = self.authorized_client.get(reverse('posts:index'))
+        self.assertEqual(
+            response_1.content,
+            response_2.content
+        )
+        cache.clear()
+        response_2 = self.authorized_client.get(reverse('posts:index'))
+        self.assertNotEqual(
+            response_1.content,
+            response_2.content
+        )
 
 
 class PostViewTests(TestCase):
@@ -300,33 +334,6 @@ class PostViewTests(TestCase):
         post_author_0 = first_object.author.username
         self.assertEqual(post_author_0, 'FirstAuthor')
 
-    def test_post_on_main_page(self):
-        """проверка отображения на главной странице"""
-        response = self.authorized_client.get(reverse('posts:index'))
-        self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertContains(response, "Пост для проверки")
-
-    def test_post_on_group_page(self):
-        """Проверка отображения на странице группы"""
-        response = self.authorized_client.get(reverse('posts:group',
-                                                      args=[self.group.slug]))
-        self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertContains(response, "Пост для проверки")
-
-    def test_post_on_group_page(self):
-        """проверка отображения на странице группы"""
-        response = self.authorized_client.get(reverse('posts:group',
-                                                      args=[self.group.slug]))
-        self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertContains(response, "Пост для проверки")
-
-    def test_post_on_group_page(self):
-        """Проверка отображения на странице автора"""
-        response = (self.authorized_client.
-                    get(reverse('posts:profile', args=[self.author.username])))
-        self.assertEqual(response.status_code, HTTPStatus.OK)
-        self.assertContains(response, "Пост для проверки")
-
     def test_post_delete(self):
         """Проверка удаления поста"""
         Post.objects.filter(text="Тест 1-14").delete()
@@ -384,17 +391,8 @@ class FollowTest(TestCase):
             kwargs={'username': self.author.username}))
         self.assertEqual(Follow.objects.count(), count + 1)
 
-    # def test_user_can_unfollowing(self):
-    #     """Не авторизованный пользователь не может
-    #     подписаться на другого пользователя"""
-    #     count = Follow.objects.count()
-    #     self.unfollower_user.get(reverse(
-    #         'posts:profile_follow',
-    #         kwargs={'username': self.author.username}))
-    #     self.assertEqual(Follow.objects.count(), count + 1)
-
     def test_user_can_unfollowing(self):
-        """Пользователь может подписаться на автора"""
+        """Пользователь может отменить подписку на автора"""
         self.follower_user.get(reverse(
             'posts:profile_follow',
             kwargs={'username': self.author.username}))
@@ -403,17 +401,3 @@ class FollowTest(TestCase):
             'posts:profile_unfollow',
             kwargs={'username': self.author.username}))
         self.assertEqual(Follow.objects.count(), count - 1)
-
-    # def test_follow_index(self):
-    #     """
-    #     Новая запись пользователя появляется в ленте тех,
-    #     кто на него подписан и не появляется в ленте тех,
-    #     кто не подписан на него
-    #     """
-    #     response = self.follower_user.get(reverse('posts:follow_index'))
-    #     print(response)
-    #     self.follower_user.get(
-    #         reverse('profile_follow', args=[self.author]))
-    #     response_follow = self.follower_user.get(
-    #         reverse('follow_index'))
-    #     self.assertEqual(response.content, response_follow.content)

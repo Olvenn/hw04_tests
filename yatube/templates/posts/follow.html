@@ -1,19 +1,20 @@
 {% extends 'base.html' %}
-{% block title %}    
-    Посты автора на которые подписан текущий пользователь
-{% endblock %}
-{% block content %}
-{% load cache %}
-{% cache 20 index_page %}
-    <h1>  Посты автора на которые подписан текущий пользователь </h1>
-{% include 'includes/switcher.html' %}  
-  {% for post in page_obj %}
-  {% include 'includes/post_list.html' %}
-    {% if post.group_id != NULL %}
-        <a href="{% url 'posts:group_posts' post.group.slug %}">все записи группы</a>
-    {% endif %}
-    {% if not forloop.last %}<hr>{% endif %}
-  {% endfor %} 
-  {% include 'includes/paginator.html' %}
-{% endcache %}
-{% endblock %}
+{% block title %}Обновленные подписки{% endblock %}
+{% comment %} {% load thumbnail %} {% endcomment %}
+  {% block content %}
+      <h2>Посты авторов, на которых подписан текущий пользователь</h2>
+      {% load cache %}
+      {% cache 20 index_page page_obj.number %}
+      {% include 'posts/includes/switcher.html' %}
+        {% for post in page_obj %}
+          {% include 'posts/includes/post_item.html' %} 
+          <p>{{ post.group.slug }}</p>
+          {% if post.group %} 
+            <a href="{% url 'posts:group' post.group.slug %}" class="text-secondary">
+              все записи группы
+            </a>
+          {% endif %}
+          {% if not forloop.last %}<hr>{% endif %}
+        {% endfor %}
+      {% endcache %}
+  {% endblock %} 
